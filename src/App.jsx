@@ -1,92 +1,94 @@
 import { useState, useEffect } from "react";
-import QuickAdd from "./components/QuickAdd";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [expenses, setExpenses] = useState([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+import Home from "./pages/Home";
+import Expenses from "./pages/Expenses";
+import Insights from "./pages/Insights";
+import BottomNav from "./components/BottomNav";
 
-  // ✅ Load from localStorage ONCE
+export default function App() {
+  // ✅ Load from localStorage BEFORE render (fixes reset issue)
+  const [expenses, setExpenses] = useState(() => {
+    const saved = localStorage.getItem("expenses");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [budget, setBudget] = useState(() => {
+    const saved = localStorage.getItem("budget");
+    return saved ? Number(saved) : 0;
+  });
+
+  // 💾 Save expenses
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("expenses");
-      if (stored) {
-        setExpenses(JSON.parse(stored));
-      }
-    } catch (err) {
-      console.error("Load error:", err);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
+    localStorage.setItem("expenses", JSON.stringify(expenses));
+  }, [expenses]);
 
-  // ✅ Save ONLY after load is complete
+  // 💾 Save budget
   useEffect(() => {
-    if (!isLoaded) return;
+    localStorage.setItem("budget", budget);
+  }, [budget]);
 
-    try {
-      localStorage.setItem("expenses", JSON.stringify(expenses));
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-  }, [expenses, isLoaded]);
+  // ➕ Add expense
+  const addExpense = (amount) => {
+    const newExpense = {
+      id: Date.now(),
+      amount,
+      timestamp: new Date().toISOString(),
+    };
 
-  const handleAdd = (expense) => {
-    setExpenses((prev) => [expense, ...prev]);
+    setExpenses((prev) => [newExpense, ...prev]);
   };
 
-  const todayTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // ❌ Delete expense
+  const deleteExpense = (id) => {
+    setExpenses((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  // ✏️ Update expense
+  const updateExpense = (id, newAmount) => {
+    setExpenses((prev) =>
+      prev.map((e) =>
+        e.id === id ? { ...e, amount: newAmount } : e
+      )
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white px-4 py-6 md:px-6 md:py-6">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-6">
-        
-        {/* LEFT PANEL */}
-        <div className="space-y-6 bg-zinc-900 p-5 md:p-6 rounded-2xl">
-          
-          {/* Header */}
-          <div className="flex justify-between items-center pt-1">
-            <h1 className="text-xl md:text-2xl font-semibold">Food Spend</h1>
-            <div className="text-xs md:text-sm text-zinc-400">
-              {new Date().toLocaleDateString()}
-            </div>
-          </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-black text-white px-4 py-6">
 
-          {/* Quick Add */}
-          <QuickAdd onAdd={handleAdd} />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Home
+                expenses={expenses}
+                onAdd={addExpense}
+                budget={budget}
+                setBudget={setBudget}
+              />
+            }
+          />
 
-          {/* Today Card */}
-          <div className="bg-zinc-800 p-4 md:p-5 rounded-2xl">
-            <p className="text-sm text-zinc-400 mb-1">Today</p>
-            <p className="text-2xl md:text-3xl font-semibold">
-              ₹{todayTotal}
-            </p>
-          </div>
-        </div>
+          <Route
+            path="/expenses"
+            element={
+              <Expenses
+                expenses={expenses}
+                onDelete={deleteExpense}
+                onUpdate={updateExpense}
+              />
+            }
+          />
 
-        {/* RIGHT PANEL */}
-        <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800 md:overflow-y-auto md:max-h-[80vh] scroll-smooth">
-          {expenses.map((e) => (
-            <div
-              key={e.id}
-              className="flex justify-between items-center px-4 md:px-5 py-3 md:py-4 hover:bg-zinc-800/50 transition"
-            >
-              <span className="text-base md:text-lg font-medium">
-                ₹{e.amount}
-              </span>
+          <Route
+            path="/insights"
+            element={<Insights expenses={expenses} />}
+          />
+        </Routes>
 
-              <span className="text-xs md:text-sm text-zinc-400">
-                {new Date(e.timestamp).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-          ))}
-        </div>
-
+        <BottomNav />
       </div>
-    </div>
+    </BrowserRouter>
   );
 }
-
-export default App;

@@ -9,11 +9,7 @@ export default function QuickAdd({ onAdd }) {
     const finalAmount = val || amount;
     if (!finalAmount) return;
 
-    onAdd({
-      id: Date.now(),
-      amount: Number(finalAmount),
-      timestamp: new Date().toISOString(),
-    });
+    onAdd(Number(finalAmount)); // ✅ FIXED (send only number)
 
     setAmount("");
   };
