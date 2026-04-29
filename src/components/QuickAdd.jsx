@@ -1,36 +1,72 @@
 import { useState } from "react";
+import { CATEGORIES } from "../constants/categories";
 
 export default function QuickAdd({ onAdd }) {
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [category, setCategory] = useState("Other");
 
   const quickValues = [100, 150, 200, 250];
 
-  const handleAdd = (val) => {
-    const finalAmount = val || amount;
-    if (!finalAmount) return;
+  // ✨ Capitalize helper
+  const capitalize = (text) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
 
-    onAdd(Number(finalAmount)); // ✅ FIXED (send only number)
+  const handleAdd = () => {
+    const val = Number(amount);
+    if (!val || val <= 0) return;
+
+    onAdd({
+      amount: val,
+      note: capitalize(note),
+      category,
+    });
 
     setAmount("");
+    setNote("");
+    setCategory("Other");
   };
 
   return (
-    <div className="bg-zinc-900 p-5 rounded-2xl shadow-lg">
-      {/* Input */}
+    <div className="bg-zinc-900 p-5 rounded-2xl shadow-lg space-y-4">
+
       <input
         type="number"
         placeholder="₹"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        className="w-full text-4xl bg-transparent outline-none text-white placeholder-zinc-600 mb-4"
+        className="w-full text-4xl bg-transparent outline-none text-white placeholder-zinc-600"
       />
 
-      {/* Quick Buttons */}
-      <div className="flex gap-2 mb-4">
+      <input
+        type="text"
+        placeholder="What was it?"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full bg-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
+      />
+
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`px-3 py-1 rounded-lg text-xs ${
+              category === c ? "bg-blue-600" : "bg-zinc-800"
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
         {quickValues.map((val) => (
           <button
             key={val}
-            onClick={() => handleAdd(val)}
+            onClick={() => setAmount(val)}
             className="flex-1 bg-zinc-800 py-2 rounded-xl text-sm active:scale-95 transition"
           >
             ₹{val}
@@ -38,9 +74,8 @@ export default function QuickAdd({ onAdd }) {
         ))}
       </div>
 
-      {/* Add Button */}
       <button
-        onClick={() => handleAdd()}
+        onClick={handleAdd}
         className="w-full bg-blue-600 py-3 rounded-xl text-lg font-medium active:scale-95 transition"
       >
         Add Expense

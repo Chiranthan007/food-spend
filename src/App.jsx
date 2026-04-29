@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -7,12 +8,13 @@ import Insights from "./pages/Insights";
 import BottomNav from "./components/BottomNav";
 
 export default function App() {
-  // ✅ Load from localStorage BEFORE render (fixes reset issue)
+  // 🔁 Load expenses
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem("expenses");
     return saved ? JSON.parse(saved) : [];
   });
 
+  // 🔁 Load budget
   const [budget, setBudget] = useState(() => {
     const saved = localStorage.getItem("budget");
     return saved ? Number(saved) : 0;
@@ -29,10 +31,12 @@ export default function App() {
   }, [budget]);
 
   // ➕ Add expense
-  const addExpense = (amount) => {
+  const addExpense = (data) => {
     const newExpense = {
       id: Date.now(),
-      amount,
+      amount: data.amount,
+      note: data.note || "",
+      category: data.category || "Other",
       timestamp: new Date().toISOString(),
     };
 
@@ -45,10 +49,10 @@ export default function App() {
   };
 
   // ✏️ Update expense
-  const updateExpense = (id, newAmount) => {
+  const updateExpense = (id, updatedData) => {
     setExpenses((prev) =>
       prev.map((e) =>
-        e.id === id ? { ...e, amount: newAmount } : e
+        e.id === id ? { ...e, ...updatedData } : e
       )
     );
   };
@@ -81,9 +85,15 @@ export default function App() {
             }
           />
 
+          {/* ✅ FIX: pass budget to Insights */}
           <Route
             path="/insights"
-            element={<Insights expenses={expenses} />}
+            element={
+              <Insights
+                expenses={expenses}
+                budget={budget}
+              />
+            }
           />
         </Routes>
 
@@ -92,3 +102,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

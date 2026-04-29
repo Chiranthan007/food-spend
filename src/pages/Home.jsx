@@ -8,6 +8,23 @@ export default function Home({ expenses, onAdd, budget, setBudget }) {
 
   const now = new Date();
 
+  // 🗓️ Start of week (Monday)
+  const getStartOfWeek = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const startOfWeek = getStartOfWeek();
+
+  const isThisWeek = (date) => {
+    const d = new Date(date);
+    return d >= startOfWeek;
+  };
+
   const isToday = (date) => {
     const d = new Date(date);
     return (
@@ -17,11 +34,25 @@ export default function Home({ expenses, onAdd, budget, setBudget }) {
     );
   };
 
+  // 📊 totals
+  const weekTotal = expenses
+    .filter((e) => isThisWeek(e.timestamp))
+    .reduce((sum, e) => sum + e.amount, 0);
+
   const todayTotal = expenses
     .filter((e) => isToday(e.timestamp))
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const remaining = budget - todayTotal;
+  const remaining = budget - weekTotal;
+
+  // 🧠 percentage logic
+  const percentUsed = budget > 0 ? Math.min((weekTotal / budget) * 100, 100) : 0;
+
+  const getColor = () => {
+    if (percentUsed < 60) return "bg-green-500";
+    if (percentUsed < 90) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
   const handleSetBudget = () => {
     const val = Number(input);
@@ -45,15 +76,15 @@ export default function Home({ expenses, onAdd, budget, setBudget }) {
       {/* Quick Add */}
       <QuickAdd onAdd={onAdd} />
 
-      {/* Budget Card */}
+      {/* 💰 Weekly Budget */}
       <div className="bg-zinc-900 p-4 rounded-2xl space-y-3">
-        <p className="text-sm text-zinc-400">Daily Budget</p>
+        <p className="text-sm text-zinc-400">Weekly Budget</p>
 
         {budget === 0 || isEditing ? (
           <div className="flex gap-2">
             <input
               type="number"
-              placeholder="Enter budget"
+              placeholder="Enter weekly budget"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="flex-1 bg-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
@@ -66,31 +97,49 @@ export default function Home({ expenses, onAdd, budget, setBudget }) {
             </button>
           </div>
         ) : (
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-lg font-semibold">₹{budget}</p>
-              <p
-                className={`text-sm ${
-                  remaining >= 0 ? "text-green-500" : "text-red-500"
-                }`}
+          <>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-lg font-semibold">₹{budget}</p>
+                <p
+                  className={`text-sm ${
+                    remaining >= 0 ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {remaining >= 0
+                    ? `₹${remaining} left`
+                    : `Over by ₹${Math.abs(remaining)}`}
+                  {" • "}
+                  {Math.round(percentUsed)}% used
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-blue-500"
               >
-                {remaining >= 0
-                  ? `₹${remaining} left`
-                  : `Over by ₹${Math.abs(remaining)}`}
-              </p>
+                Edit
+              </button>
             </div>
 
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-xs text-blue-500"
-            >
-              Edit
-            </button>
-          </div>
+            {/* 📊 Progress Bar */}
+            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${getColor()}`}
+                style={{ width: `${percentUsed}%` }}
+              />
+            </div>
+          </>
         )}
       </div>
 
-      {/* Today Card */}
+      {/* 📊 This Week */}
+      <div className="bg-zinc-800 p-4 rounded-2xl">
+        <p className="text-sm text-zinc-400 mb-1">This Week</p>
+        <p className="text-2xl font-semibold">₹{weekTotal}</p>
+      </div>
+
+      {/* 📅 Today */}
       <div className="bg-zinc-800 p-4 rounded-2xl">
         <p className="text-sm text-zinc-400 mb-1">Today</p>
         <p className="text-2xl font-semibold">₹{todayTotal}</p>
@@ -112,11 +161,14 @@ export default function Home({ expenses, onAdd, budget, setBudget }) {
           </div>
         ) : (
           expenses.slice(0, 5).map((e) => (
-            <div
-              key={e.id}
-              className="flex justify-between px-4 py-3"
-            >
-              <span>₹{e.amount}</span>
+            <div key={e.id} className="flex justify-between px-4 py-3">
+              <div>
+                <p>₹{e.amount}</p>
+                <p className="text-xs text-zinc-400">
+                  {e.note || "No note"} • {e.category}
+                </p>
+              </div>
+
               <span className="text-xs text-zinc-400">
                 {new Date(e.timestamp).toLocaleTimeString([], {
                   hour: "numeric",
