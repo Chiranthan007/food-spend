@@ -1,12 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CATEGORIES } from "../constants/categories";
 
 export default function QuickAdd({ onAdd }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
-  const [category, setCategory] = useState("Other");
+
+  // 🧠 Load last category
+  const [category, setCategory] = useState(() => {
+    const saved = localStorage.getItem("lastCategory");
+    return saved || "Other";
+  });
 
   const quickValues = [100, 150, 200, 250];
+
+  // 💾 Save last category
+  useEffect(() => {
+    localStorage.setItem("lastCategory", category);
+  }, [category]);
 
   // ✨ Capitalize helper
   const capitalize = (text) => {
@@ -24,22 +34,26 @@ export default function QuickAdd({ onAdd }) {
       category,
     });
 
+    // 🧼 Reset (smart reset)
     setAmount("");
     setNote("");
-    setCategory("Other");
+    // ❗ category stays
   };
 
   return (
     <div className="bg-zinc-900 p-5 rounded-2xl shadow-lg space-y-4">
-
+      
+      {/* Amount */}
       <input
         type="number"
         placeholder="₹"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         className="w-full text-4xl bg-transparent outline-none text-white placeholder-zinc-600"
+        autoFocus
       />
 
+      {/* Note */}
       <input
         type="text"
         placeholder="What was it?"
@@ -48,6 +62,7 @@ export default function QuickAdd({ onAdd }) {
         className="w-full bg-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
       />
 
+      {/* Categories */}
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
           <button
@@ -62,6 +77,7 @@ export default function QuickAdd({ onAdd }) {
         ))}
       </div>
 
+      {/* Quick values */}
       <div className="flex gap-2">
         {quickValues.map((val) => (
           <button
@@ -74,6 +90,7 @@ export default function QuickAdd({ onAdd }) {
         ))}
       </div>
 
+      {/* Add */}
       <button
         onClick={handleAdd}
         className="w-full bg-blue-600 py-3 rounded-xl text-lg font-medium active:scale-95 transition"

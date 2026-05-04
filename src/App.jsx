@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -59,7 +58,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-black text-white px-4 py-6">
+      {/* 🔥 THIS is the actual scroll container */}
+      <div className="h-screen overflow-y-auto no-scrollbar bg-black text-white px-4 py-6">
 
         <Routes>
           <Route
@@ -85,7 +85,6 @@ export default function App() {
             }
           />
 
-          {/* ✅ FIX: pass budget to Insights */}
           <Route
             path="/insights"
             element={
@@ -102,4 +101,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
